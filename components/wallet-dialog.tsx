@@ -8,6 +8,8 @@ import {
 } from './ui/dialog';
 import { useConnect } from '@starknet-react/core';
 import { Button } from './ui/button';
+import { useEffect } from 'react';
+import { useToast } from './ui/use-toast';
 
 export function WalletDialog({
     dialogOpen,
@@ -16,7 +18,25 @@ export function WalletDialog({
     dialogOpen: boolean;
     setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-    const { connect, connectors } = useConnect();
+    const { connect, connectors, error, isError, isSuccess } = useConnect();
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (isError) {
+            toast({
+                variant: 'destructive',
+                title: 'Uh oh! Something went wrong.',
+                description: error.toString(),
+                duration: 2000
+            });
+        }
+    }, [isError]);
+
+    useEffect(() => {
+        if (isSuccess) {
+            setDialogOpen(false);
+        }
+    }, [isSuccess]);
 
     return (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -37,12 +57,12 @@ export function WalletDialog({
                     ))}
                 </ul>
                 <DialogFooter className="flex flex-col mt-4">
-                    <p className='block'>New to Starknet?</p>
+                    <p className="block">New to Starknet?</p>
                     <Link
                         href="https://www.starknet.io/en/ecosystem/wallets"
                         target="__blank"
                         rel="noreferrer noopener"
-                        className='block underline'
+                        className="block underline"
                     >
                         Learn more about wallets
                     </Link>

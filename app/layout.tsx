@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { StarknetProvider } from '@/components/starknet-provider';
+import { Toaster } from '@/components/ui/toaster';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -25,7 +26,10 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                 >
-                    <StarknetProvider>{children}</StarknetProvider>
+                    <StarknetProvider>
+                        <Toaster />
+                        {children}
+                    </StarknetProvider>
                 </ThemeProvider>
             </body>
         </html>
