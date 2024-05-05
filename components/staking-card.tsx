@@ -3,7 +3,6 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle
 } from '@/components/ui/card';
@@ -16,18 +15,29 @@ import {
     useContractWrite,
     useWaitForTransaction
 } from '@starknet-react/core';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, FormEvent } from 'react';
 import { WalletDialog } from './wallet-dialog';
 import { contractAddress, contractABI } from '@/lib/consts';
+import { cairo, Uint256 } from 'starknet';
 
 export function StakingCard() {
+    const DECIMALS = 18;
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+    const [amount, setAmount] = useState<string>('');
     const { isConnected, address } = useAccount();
     const { contract } = useContract({
         address: contractAddress,
         abi: contractABI
     });
-    // currentUserRewards
+
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const newAmount: Uint256 = cairo.uint256(
+            (amount as any) * 10 ** DECIMALS
+        );
+
+        console.log('new amount', newAmount);
+    };
 
     const connectWallet = () => {
         setDialogOpen(true);
@@ -38,12 +48,18 @@ export function StakingCard() {
         return contract.populateTransaction['currentUserRewards']!(address);
     }, [contract, address]);
 
+    const stakeAmount = useMemo(() => {
+        if (!address || !contract) return [];
+        return contract.populateTransaction['currentUserRewards']!(address);
+    }, [contract, address]);
+
     const {
-        write,
+        writeAsync,
         reset,
         data: tx,
         isError: isSubmitError,
-        error: submitError
+        error: submitError,
+        variables
     } = useContractWrite({
         calls: getCurrentUserRewards
     });
@@ -63,6 +79,7 @@ export function StakingCard() {
     useEffect(() => {
         if (tx) {
             console.log('tx', tx);
+            console.log('variables', variables);
         }
         if (receipt) {
             console.log('receipt', receipt);
@@ -82,31 +99,40 @@ export function StakingCard() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form>
+                <form onSubmit={handleSubmit}>
                     <div className="grid w-full items-center gap-4">
                         <div className="flex flex-col space-y-1.5">
-                            <Label htmlFor="name">Amount</Label>
+                            <Label htmlFor="amount">Amount</Label>
                             <Input
-                                id="name"
+                                id="amount"
                                 type="number"
                                 placeholder="Amount to stake"
+                                value={amount}
+                                required
+                                onChange={(e) => {
+                                    setAmount(e.target.value);
+                                }}
                             />
                         </div>
                     </div>
+                    <div className="flex justify-between mt-6">
+                        {isConnected ? (
+                            <>
+                                <Button className="w-full" type="submit">
+                                    Stake
+                                </Button>
+                                <Button onClick={() => writeAsync()}>
+                                    Test
+                                </Button>
+                            </>
+                        ) : (
+                            <Button className="w-full" onClick={connectWallet}>
+                                Connect Wallet
+                            </Button>
+                        )}
+                    </div>
                 </form>
             </CardContent>
-            <CardFooter className="flex justify-between">
-                {isConnected ? (
-                    <>
-                        <Button className="w-full">Stake</Button>
-                        <Button onClick={() => write()}>Test</Button>
-                    </>
-                ) : (
-                    <Button className="w-full" onClick={connectWallet}>
-                        Connect Wallet
-                    </Button>
-                )}
-            </CardFooter>
         </Card>
     );
 }
