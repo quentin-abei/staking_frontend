@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { StarknetSVG } from './starknet-svg';
 import { ModeToggle } from './mode-toggle';
-import { useAccount } from '@starknet-react/core';
+import { useAccount, useNetwork } from '@starknet-react/core';
 import { DisconnectWallet } from './disconnect-dialog';
 
 export function Header() {
@@ -16,6 +16,7 @@ export function Header() {
     };
 
     const { address, isConnected } = useAccount();
+    const { chain } = useNetwork();
 
     const truncateAddress = (addr: string | undefined) => {
         return `${addr?.slice(0, 6)}...${addr?.slice(-3)}`;
@@ -46,8 +47,8 @@ export function Header() {
                     {isConnected ? (
                         <>
                             <Button className=" border border-orange-500 flex text-orange-500 dark:text-white gap-2 items-center bg-transparent hover:bg-transparent">
-                                <StarknetSVG height="25" width="25" /> Starknet
-                                mainnet
+                                <StarknetSVG height="25" width="25" />
+                                {chain.name}
                             </Button>
                             <div>
                                 <Button

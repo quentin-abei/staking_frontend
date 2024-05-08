@@ -36,7 +36,7 @@ export function StakingCard() {
             (amount as any) * 10 ** DECIMALS
         );
 
-        console.log('new amount', newAmount);
+        // console.log('new amount', newAmount);
     };
 
     const connectWallet = () => {
@@ -50,7 +50,7 @@ export function StakingCard() {
 
     const stakeAmount = useMemo(() => {
         if (!address || !contract) return [];
-        return contract.populateTransaction['currentUserRewards']!(address);
+        return contract.populateTransaction['stake']!(address);
     }, [contract, address]);
 
     const {
@@ -76,15 +76,15 @@ export function StakingCard() {
         refetchInterval: 2000
     });
 
-    useEffect(() => {
-        if (tx) {
-            console.log('tx', tx);
-            console.log('variables', variables);
-        }
-        if (receipt) {
-            console.log('receipt', receipt);
-        }
-    }, [tx, receipt]);
+    // useEffect(() => {
+    //     if (tx) {
+    //         console.log('tx', tx);
+    //         console.log('variables', variables);
+    //     }
+    //     if (receipt) {
+    //         console.log('receipt', receipt);
+    //     }
+    // }, [tx, receipt]);
 
     return (
         <Card className="w-[650px] border-[#d3500c]">
@@ -121,9 +121,9 @@ export function StakingCard() {
                                 <Button className="w-full" type="submit">
                                     Stake
                                 </Button>
-                                <Button onClick={() => writeAsync()}>
+                                {/* <Button onClick={() => writeAsync()}>
                                     Test
-                                </Button>
+                                </Button> */}
                             </>
                         ) : (
                             <Button className="w-full" onClick={connectWallet}>

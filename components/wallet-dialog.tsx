@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 import {
     Dialog,
@@ -8,7 +9,7 @@ import {
 } from './ui/dialog';
 import { useConnect } from '@starknet-react/core';
 import { Button } from './ui/button';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useToast } from './ui/use-toast';
 
 export function WalletDialog({
@@ -23,10 +24,13 @@ export function WalletDialog({
 
     useEffect(() => {
         if (isError) {
+            const data = JSON.stringify(error);
+            const parsedError = JSON.parse(data);
+
             toast({
                 variant: 'destructive',
                 title: 'Uh oh! Something went wrong.',
-                description: error.toString(),
+                description: parsedError.message,
                 duration: 2000
             });
         }
