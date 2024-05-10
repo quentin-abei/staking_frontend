@@ -13,12 +13,20 @@ import {
     useAccount,
     useContract,
     useContractWrite,
-    useWaitForTransaction
+    useWaitForTransaction,
+    useContractRead
 } from '@starknet-react/core';
 import { useEffect, useState, useMemo, FormEvent } from 'react';
 import { WalletDialog } from './wallet-dialog';
-import { contractAddress, contractABI } from '@/lib/consts';
+import {
+    contractAddress,
+    contractABI,
+    tokenAddress,
+    tokenABI
+} from '@/lib/consts';
 import { cairo, Uint256 } from 'starknet';
+import { LoadingSpinner } from './loader';
+import Image from 'next/image';
 
 export function StakingCard() {
     const DECIMALS = 18;
@@ -43,38 +51,38 @@ export function StakingCard() {
         setDialogOpen(true);
     };
 
-    const getCurrentUserRewards = useMemo(() => {
-        if (!address || !contract) return [];
-        return contract.populateTransaction['currentUserRewards']!(address);
-    }, [contract, address]);
+    // const getCurrentUserRewards = useMemo(() => {
+    //     if (!address || !contract) return [];
+    //     return contract.populateTransaction['currentUserRewards']!(address);
+    // }, [contract, address]);
 
-    const stakeAmount = useMemo(() => {
-        if (!address || !contract) return [];
-        return contract.populateTransaction['stake']!(address);
-    }, [contract, address]);
+    // const stakeAmount = useMemo(() => {
+    //     if (!address || !contract) return [];
+    //     return contract.populateTransaction['stake']!(address);
+    // }, [contract, address]);
 
-    const {
-        writeAsync,
-        reset,
-        data: tx,
-        isError: isSubmitError,
-        error: submitError,
-        variables
-    } = useContractWrite({
-        calls: getCurrentUserRewards
-    });
+    // const {
+    //     writeAsync,
+    //     reset,
+    //     data: tx,
+    //     isError: isSubmitError,
+    //     error: submitError,
+    //     variables
+    // } = useContractWrite({
+    //     calls: getCurrentUserRewards
+    // });
 
-    const {
-        data: receipt,
-        isLoading,
-        isError,
-        error
-    } = useWaitForTransaction({
-        hash: tx?.transaction_hash,
-        watch: true,
-        retry: true,
-        refetchInterval: 2000
-    });
+    // const {
+    //     data: receipt,
+    //     isLoading,
+    //     isError,
+    //     error
+    // } = useWaitForTransaction({
+    //     hash: tx?.transaction_hash,
+    //     watch: true,
+    //     retry: true,
+    //     refetchInterval: 2000
+    // });
 
     // useEffect(() => {
     //     if (tx) {
@@ -86,6 +94,15 @@ export function StakingCard() {
     //     }
     // }, [tx, receipt]);
 
+    // to get the balance of the connected account
+    const { data: tokenBalance } = useContractRead({
+        address: tokenAddress,
+        abi: tokenABI,
+        args: [address as string],
+        functionName: 'balance_of',
+        watch: true
+    });
+
     return (
         <Card className="w-[650px] border-[#d3500c]">
             <WalletDialog
@@ -93,9 +110,30 @@ export function StakingCard() {
                 setDialogOpen={setDialogOpen}
             />
             <CardHeader>
-                <CardTitle>Stake STBULL</CardTitle>
-                <CardDescription>
-                    Stake your tokens to earn rewards
+                <CardTitle className="flex justify-between items-center">
+                    <span>Stake STBULL</span>
+                    <span className="flex items-center gap-2">
+                        <Image
+                            src={'/images/bull-logo.jpeg'}
+                            alt="Token logo"
+                            width={30}
+                            height={30}
+                            className="rounded-full"
+                        />
+                        <span className="text-lg">STBULL</span>
+                    </span>
+                </CardTitle>
+                <CardDescription className="flex justify-between items-center">
+                    <span>Stake your tokens to earn rewards</span>
+                    {isConnected ? (
+                        tokenBalance ? (
+                            'Balance ' + tokenBalance.toString()
+                        ) : (
+                            <LoadingSpinner className="text-[#EA580C]" />
+                        )
+                    ) : (
+                        <span>Connect your wallet</span>
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent>
