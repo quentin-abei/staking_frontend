@@ -23,6 +23,7 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <StarknetConfig
+            autoConnect
             chains={[mainnet, sepolia]}
             provider={publicProvider()}
             connectors={connectors}
