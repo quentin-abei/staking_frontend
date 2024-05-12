@@ -24,78 +24,29 @@ import {
     tokenAddress,
     tokenABI
 } from '@/lib/consts';
-import { cairo, Uint256 } from 'starknet';
 import { LoadingSpinner } from './loader';
 import Image from 'next/image';
+import { formatBalance } from '@/lib/utils';
 
 export function StakingCard() {
-    const DECIMALS = 18;
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-    const [amount, setAmount] = useState<string>('');
+    const [amount, setAmount] = useState<number>(0);
     const { isConnected, address } = useAccount();
     const { contract } = useContract({
         address: contractAddress,
         abi: contractABI
     });
 
-    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const newAmount: Uint256 = cairo.uint256(
-            (amount as any) * 10 ** DECIMALS
-        );
-
-        // console.log('new amount', newAmount);
-    };
-
     const connectWallet = () => {
         setDialogOpen(true);
     };
 
-    // const getCurrentUserRewards = useMemo(() => {
-    //     if (!address || !contract) return [];
-    //     return contract.populateTransaction['currentUserRewards']!(address);
-    // }, [contract, address]);
-
-    // const stakeAmount = useMemo(() => {
-    //     if (!address || !contract) return [];
-    //     return contract.populateTransaction['stake']!(address);
-    // }, [contract, address]);
-
-    // const {
-    //     writeAsync,
-    //     reset,
-    //     data: tx,
-    //     isError: isSubmitError,
-    //     error: submitError,
-    //     variables
-    // } = useContractWrite({
-    //     calls: getCurrentUserRewards
-    // });
-
-    // const {
-    //     data: receipt,
-    //     isLoading,
-    //     isError,
-    //     error
-    // } = useWaitForTransaction({
-    //     hash: tx?.transaction_hash,
-    //     watch: true,
-    //     retry: true,
-    //     refetchInterval: 2000
-    // });
-
-    // useEffect(() => {
-    //     if (tx) {
-    //         console.log('tx', tx);
-    //         console.log('variables', variables);
-    //     }
-    //     if (receipt) {
-    //         console.log('receipt', receipt);
-    //     }
-    // }, [tx, receipt]);
-
-    // to get the balance of the connected account
-    const { data: tokenBalance } = useContractRead({
+    // get the balance of the connected account
+    const {
+        data: tokenBalance,
+        refetch: refetchBalance,
+        isFetching: fetchingBalance
+    } = useContractRead({
         address: tokenAddress,
         abi: tokenABI,
         args: [address as string],
@@ -103,8 +54,34 @@ export function StakingCard() {
         watch: true
     });
 
+    // stake the entered amount of tokens
+    const stakeTokenCall = useMemo(() => {
+        if (!address || !contract) return [];
+        return contract.populateTransaction['stake']!(amount);
+    }, [contract, address]);
+
+    // stake the entered amount of tokens
+    const {
+        isPending: stakingPending,
+        write: stakeTokens,
+        status: stakeStatus
+    } = useContractWrite({
+        calls: stakeTokenCall
+    });
+
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        stakeTokens();
+    };
+
+    useEffect(() => {
+        if (stakeStatus === 'success') {
+            refetchBalance();
+        }
+    }, [stakeStatus]);
+
     return (
-        <Card className="w-[650px] border-[#d3500c]">
+        <Card className="w-[1024px] border-[#d3500c]">
             <WalletDialog
                 dialogOpen={dialogOpen}
                 setDialogOpen={setDialogOpen}
@@ -126,10 +103,10 @@ export function StakingCard() {
                 <CardDescription className="flex justify-between items-center">
                     <span>Stake your tokens to earn rewards</span>
                     {isConnected ? (
-                        tokenBalance ? (
-                            'Balance ' + tokenBalance.toString()
+                        tokenBalance && fetchingBalance === false ? (
+                            'Balance ' + formatBalance(tokenBalance.toString())
                         ) : (
-                            <LoadingSpinner className="text-[#EA580C]" />
+                            <LoadingSpinner className="text-[#EA580C] h-5" />
                         )
                     ) : (
                         <span>Connect your wallet</span>
@@ -148,23 +125,38 @@ export function StakingCard() {
                                 value={amount}
                                 required
                                 onChange={(e) => {
-                                    setAmount(e.target.value);
+                                    const convertedAmount = parseInt(
+                                        e.target.value
+                                    );
+                                    setAmount(convertedAmount);
                                 }}
                             />
                         </div>
                     </div>
-                    <div className="flex justify-between mt-6">
+                    <div className="flex justify-end mt-6">
                         {isConnected ? (
                             <>
-                                <Button className="w-full" type="submit">
-                                    Stake
+                                <Button
+                                    className=" flex items-center gap-2 w-1/4"
+                                    disabled={stakingPending}
+                                    type="submit"
+                                >
+                                    {stakeStatus === 'pending' ? (
+                                        <>
+                                            <LoadingSpinner className="text-white" />
+                                            Staking
+                                        </>
+                                    ) : (
+                                        'Stake'
+                                    )}
                                 </Button>
-                                {/* <Button onClick={() => writeAsync()}>
-                                    Test
-                                </Button> */}
                             </>
                         ) : (
-                            <Button className="w-full" onClick={connectWallet}>
+                            <Button
+                                type="button"
+                                className="w-1/4"
+                                onClick={connectWallet}
+                            >
                                 Connect Wallet
                             </Button>
                         )}
