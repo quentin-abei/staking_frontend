@@ -27,10 +27,13 @@ import {
 import { LoadingSpinner } from './loader';
 import Image from 'next/image';
 import { formatBalance } from '@/lib/utils';
+import { ChangeEvent } from 'react';
+import { useToast } from './ui/use-toast';
 
 export function StakingCard() {
+    const { toast } = useToast();
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-    const [amount, setAmount] = useState<number>(0);
+    const [amount, setAmount] = useState<number | null>(null);
     const { isConnected, address } = useAccount();
     const { contract } = useContract({
         address: contractAddress,
@@ -56,9 +59,15 @@ export function StakingCard() {
 
     // stake the entered amount of tokens
     const stakeTokenCall = useMemo(() => {
-        if (!address || !contract) return [];
+        if (
+            !address ||
+            !contract ||
+            amount === null ||
+            !Number.isInteger(amount)
+        )
+            return [];
         return contract.populateTransaction['stake']!(amount);
-    }, [contract, address]);
+    }, [contract, address, amount ?? 0]);
 
     // stake the entered amount of tokens
     const {
@@ -71,6 +80,17 @@ export function StakingCard() {
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (amount !== null && !Number.isInteger(amount)) {
+            // Display toast message for float value
+            toast({
+                variant: 'destructive',
+                title: 'Uh oh! Something went wrong.',
+                description:
+                    'You can only stake whole tokens, please enter an integer value',
+                duration: 2000
+            });
+            return;
+        }
         stakeTokens();
     };
 
@@ -79,6 +99,14 @@ export function StakingCard() {
             refetchBalance();
         }
     }, [stakeStatus]);
+
+    const onNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const value = !Number.isNaN(e.target.valueAsNumber)
+            ? e.target.valueAsNumber
+            : null;
+
+        setAmount(value);
+    };
 
     return (
         <Card className="w-[1024px] border-[#d3500c]">
@@ -122,14 +150,9 @@ export function StakingCard() {
                                 id="amount"
                                 type="number"
                                 placeholder="Amount to stake"
-                                value={amount}
+                                value={amount ?? ''}
                                 required
-                                onChange={(e) => {
-                                    const convertedAmount = parseInt(
-                                        e.target.value
-                                    );
-                                    setAmount(convertedAmount);
-                                }}
+                                onChange={onNumberChange}
                             />
                         </div>
                     </div>

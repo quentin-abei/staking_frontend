@@ -7,8 +7,7 @@ export default function Home() {
     return (
         <div className="max-w-7xl mx-auto">
             <Header />
-           
-            <div className="flex gap-6 justify-center items-center pt-32">
+            <div className="flex gap-6 pt-32">
                 <InfoCard />
                 <StakingCard />
             </div>
