@@ -26,11 +26,13 @@ import {
 } from '@/lib/consts';
 import { LoadingSpinner } from './loader';
 import Image from 'next/image';
-import { formatBalance } from '@/lib/utils';
 import { ChangeEvent } from 'react';
 import { useToast } from './ui/use-toast';
+import { useSetAtom } from 'jotai';
+import { stakeUpdateAtom } from '@/lib/store';
 
 export function StakingCard() {
+    const setStakingUpdate = useSetAtom(stakeUpdateAtom);
     const { toast } = useToast();
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
     const [amount, setAmount] = useState<number | null>(null);
@@ -72,11 +74,43 @@ export function StakingCard() {
     // stake the entered amount of tokens
     const {
         isPending: stakingPending,
-        write: stakeTokens,
-        status: stakeStatus
+        writeAsync: stakeTokens,
+        status: stakeStatus,
+        data: stakeTx
     } = useContractWrite({
         calls: stakeTokenCall
     });
+
+    const {
+        isLoading: loadingStakeReceipt,
+        status: stakeRecepitStatus,
+        isError: isStakeError,
+        error: stakeError,
+        isSuccess: isStakeSuccess
+    } = useWaitForTransaction({
+        hash: stakeTx?.transaction_hash,
+        watch: true
+    });
+
+    useEffect(() => {
+        if (isStakeError) {
+            toast({
+                variant: 'destructive',
+                title: 'Uh oh! Something went wrong.',
+                description: stakeError?.message,
+                duration: 2000
+            });
+        }
+
+        if (isStakeSuccess) {
+            toast({
+                variant: 'default',
+                title: 'Success',
+                description: `You successfully staked ${amount} tokens.`,
+                duration: 2000
+            });
+        }
+    }, [isStakeError, isStakeSuccess]);
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -91,14 +125,26 @@ export function StakingCard() {
             });
             return;
         }
+        if (amount && amount > Number(tokenBalance)) {
+            toast({
+                variant: 'destructive',
+                title: 'Uh oh! Something went wrong.',
+                description:
+                    'The amount you are attempting to stake exceeds the number of tokens you currently own.',
+                duration: 2000
+            });
+
+            return;
+        }
         stakeTokens();
     };
 
     useEffect(() => {
-        if (stakeStatus === 'success') {
+        if (stakeRecepitStatus === 'success') {
             refetchBalance();
+            setStakingUpdate((prev) => prev + 1);
         }
-    }, [stakeStatus]);
+    }, [stakeRecepitStatus]);
 
     const onNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
         const value = !Number.isNaN(e.target.valueAsNumber)
@@ -117,6 +163,7 @@ export function StakingCard() {
             <CardHeader>
                 <CardTitle className="flex justify-between items-center">
                     <span>Stake STBULL</span>
+
                     <span className="flex items-center gap-2">
                         <Image
                             src={'/images/bull-logo.jpeg'}
@@ -131,8 +178,10 @@ export function StakingCard() {
                 <CardDescription className="flex justify-between items-center">
                     <span>Stake your tokens to earn rewards</span>
                     {isConnected ? (
-                        tokenBalance && fetchingBalance === false ? (
-                            'Balance ' + formatBalance(tokenBalance.toString())
+                        tokenBalance !== undefined &&
+                        !isNaN(Number(tokenBalance)) &&
+                        fetchingBalance === false ? (
+                            'Balance ' + tokenBalance.toString()
                         ) : (
                             <LoadingSpinner className="text-[#EA580C] h-5" />
                         )
@@ -160,11 +209,14 @@ export function StakingCard() {
                         {isConnected ? (
                             <>
                                 <Button
-                                    className=" flex items-center gap-2 w-1/4"
-                                    disabled={stakingPending}
+                                    className=" flex items-center gap-2"
+                                    disabled={
+                                        stakingPending || loadingStakeReceipt
+                                    }
                                     type="submit"
                                 >
-                                    {stakeStatus === 'pending' ? (
+                                    {stakeStatus === 'pending' ||
+                                    loadingStakeReceipt ? (
                                         <>
                                             <LoadingSpinner className="text-white" />
                                             Staking

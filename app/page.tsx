@@ -7,11 +7,11 @@ export default function Home() {
     return (
         <div className="max-w-7xl mx-auto">
             <Header />
-            <div className="flex gap-6 pt-32">
+            <div className="flex gap-6 pt-32 px-4">
                 <InfoCard />
                 <StakingCard />
             </div>
-            <div className="flex justify-center items-center py-32">
+            <div className="flex justify-center items-center py-6 px-4">
                 <Rewards />
             </div>
         </div>

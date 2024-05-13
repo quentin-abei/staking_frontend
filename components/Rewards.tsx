@@ -11,86 +11,138 @@ import {
     useContractWrite,
     useContract,
     useAccount,
-    useWaitForTransaction
+    useWaitForTransaction,
+    useContractRead
 } from '@starknet-react/core';
 import { contractAddress, contractABI } from '@/lib/consts';
 import { useEffect, useMemo } from 'react';
 import { LoadingSpinner } from './loader';
-import { getCalldata } from 'starknet';
+import { useToast } from './ui/use-toast';
+import Image from 'next/image';
 
 export function Rewards() {
-    const { address } = useAccount();
-
+    const { address, isConnected } = useAccount();
+    const { toast } = useToast();
     const { contract } = useContract({
         abi: contractABI,
         address: contractAddress
     });
 
-    const calculateRewardsCall = useMemo(() => {
+    const claimRewardsCall = useMemo(() => {
         if (!address || !contract) return [];
-        return contract.populateTransaction['calculate_rewards_earned']!(
-            address
-        );
+        return contract.populateTransaction['claim']([]);
     }, [contract, address]);
 
     const {
-        data: calculatedRewardsTx,
-        writeAsync: calculateRewards,
-        isPending
+        data: claimRewardsTx,
+        writeAsync: claimRewards,
+        status: claimRewardsStatus,
+        isError: claimRewardsErrorStatus,
+        error: claimRewardsError
     } = useContractWrite({
-        calls: calculateRewardsCall
+        calls: claimRewardsCall
     });
 
-    const {
-        data: receipt,
-        isLoading,
-        status
-    } = useWaitForTransaction({
-        hash: calculatedRewardsTx?.transaction_hash,
+    const { data: rewardsData, isLoading: loadingRewards } = useContractRead({
+        functionName: 'calculate_rewards_earned',
+        args: [address as string],
+        abi: contractABI,
+        address: contractAddress,
+        parseResult: true,
         watch: true
     });
 
+    const { data: claimRewardReceipt, isLoading: loadingClaimRewardReceipt } =
+        useWaitForTransaction({
+            hash: claimRewardsTx?.transaction_hash,
+            watch: true
+        });
+
     useEffect(() => {
-        if (receipt) {
-            console.log('receipt', receipt);
+        if (claimRewardReceipt) {
+            console.log('receipt', claimRewardReceipt);
         }
-        if (calculatedRewardsTx) {
-            console.log('rewards', calculatedRewardsTx);
+        if (claimRewardsTx) {
+            console.log('claim rewards', claimRewardsTx);
         }
-    }, [receipt, calculatedRewardsTx]);
+    }, [claimRewardReceipt, claimRewardsTx]);
+
+    const handleClaimRewards = async () => {
+        try {
+            await claimRewards();
+        } catch (error) {}
+    };
+
+    useEffect(() => {
+        if (claimRewardsErrorStatus) {
+            toast({
+                variant: 'destructive',
+                title: 'Uh oh! Something went wrong.',
+                description: claimRewardsError?.message,
+                duration: 2000
+            });
+        }
+    }, [claimRewardsErrorStatus]);
+
+    useEffect(() => {
+        if (rewardsData) {
+            console.log('rewards', rewardsData);
+        }
+        console.log('rev', rewardsData);
+    }, [rewardsData]);
 
     return (
-        <Card className="w-[650px] border-[#d3500c]">
+        <Card className="w-[1250px] border-[#d3500c]">
             <CardHeader>
                 <CardTitle>Rewards</CardTitle>
                 <CardDescription>Claim your earned rewards</CardDescription>
             </CardHeader>
             <CardContent>
-                <h1>Rewards</h1>
-                <p>
-                    Lorem, ipsum dolor sit amet consectetur adipisicing elit.
-                    Laudantium perferendis fugit aperiam porro, neque in. Minus,
-                    odit ex obcaecati voluptates molestias tempore assumenda
-                    exercitationem optio ab laborum necessitatibus quaerat
-                    inventore!
-                </p>
-                <div className="mt-8 flex justify-between items-center">
+                <h1>Reward Token</h1>
+                <span className="flex items-center gap-2 mt-2">
+                    <Image
+                        src={'/images/bull-logo.jpeg'}
+                        alt="Token logo"
+                        width={20}
+                        height={20}
+                        className="rounded-full"
+                    />
+                    <span className="text-sm text-[#A8A29E]">STBULL</span>
+                </span>
+                <h1 className="mt-4">Earned Reward Tokens</h1>
+                <span className="mt-2">
+                    {isConnected ? (
+                        rewardsData !== undefined &&
+                        !isNaN(Number(rewardsData)) &&
+                        loadingRewards === false ? (
+                            rewardsData.toString()
+                        ) : (
+                            <LoadingSpinner className="text-[#EA580C] h-5" />
+                        )
+                    ) : (
+                        <span>Connect your wallet</span>
+                    )}
+                </span>
+                <div className="mt-8 flex justify-end items-center">
                     <Button
-                        className=""
                         type="button"
-                        onClick={() => calculateRewards()}
-                        disabled={isLoading}
+                        onClick={handleClaimRewards}
+                        disabled={
+                            loadingClaimRewardReceipt ||
+                            claimRewardsStatus === 'pending' ||
+                            Number(rewardsData) === 0
+                        }
                     >
-                        {isLoading ? (
-                            <div className="flex gap-2 items-center">
-                                <LoadingSpinner className="text-white h-5" />
-                                Calculating
+                        {loadingClaimRewardReceipt ||
+                        claimRewardsStatus === 'pending' ? (
+                            <div className="flex gap-1 items-center">
+                                <LoadingSpinner className="text-white h-5 -ml-1" />
+                                Claiming
                             </div>
                         ) : (
-                            'Calculate Rewards'
+                            'Claim Rewards'
                         )}
                     </Button>
-                    <Button className="">Claim Rewards</Button>
                 </div>
             </CardContent>
         </Card>

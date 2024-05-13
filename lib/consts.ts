@@ -1,5 +1,5 @@
 export const contractAddress =
-    '0x426c8955745b12472bffd4b6b8c61f5a23f8a329be9468b7481ecab3922566c';
+    '0x3badbaf11a9d11cf8e580baa79a4bc993b205d8056e6c0a615750bfd022b4f0';
 export const contractABI = [
     {
         name: 'SimpleRewardsImpl',
@@ -85,7 +85,7 @@ export const contractABI = [
                         type: 'core::integer::u256'
                     }
                 ],
-                state_mutability: 'external'
+                state_mutability: 'view'
             },
             {
                 name: 'staking_Token',
@@ -121,11 +121,15 @@ export const contractABI = [
                 state_mutability: 'view'
             },
             {
-                name: 'updateTime',
+                name: 'get_remaining_time',
                 type: 'function',
                 inputs: [],
-                outputs: [],
-                state_mutability: 'external'
+                outputs: [
+                    {
+                        type: 'core::integer::u64'
+                    }
+                ],
+                state_mutability: 'view'
             },
             {
                 name: 'updateStakingDuration',
