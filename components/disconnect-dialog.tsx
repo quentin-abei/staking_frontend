@@ -1,12 +1,7 @@
 'use client';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle
-} from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { useDisconnect, useAccount } from '@starknet-react/core';
 import { FaCopy } from 'react-icons/fa';
 import { IoMdDoneAll } from 'react-icons/io';
@@ -68,7 +63,11 @@ export function DisconnectWallet({
 
                 <div className="border border-[#EA580C] rounded-lg p-4 flex gap-2 items-center">
                     <Image
-                        src={'/images/braavos.svg'}
+                        src={
+                            connector?.name === 'Argent X'
+                                ? '/images/argent.svg'
+                                : '/images/braavos.svg'
+                        }
                         height={45}
                         width={45}
                         alt="Bravoos wallet"

@@ -58,14 +58,14 @@ export function Rewards() {
             watch: true
         });
 
-    useEffect(() => {
-        if (claimRewardReceipt) {
-            console.log('receipt', claimRewardReceipt);
-        }
-        if (claimRewardsTx) {
-            console.log('claim rewards', claimRewardsTx);
-        }
-    }, [claimRewardReceipt, claimRewardsTx]);
+    // useEffect(() => {
+    //     if (claimRewardReceipt) {
+    //         console.log('receipt', claimRewardReceipt);
+    //     }
+    //     if (claimRewardsTx) {
+    //         console.log('claim rewards', claimRewardsTx);
+    //     }
+    // }, [claimRewardReceipt, claimRewardsTx]);
 
     const handleClaimRewards = async () => {
         try {
@@ -84,12 +84,12 @@ export function Rewards() {
         }
     }, [claimRewardsErrorStatus]);
 
-    useEffect(() => {
-        if (rewardsData) {
-            console.log('rewards', rewardsData);
-        }
-        console.log('rev', rewardsData);
-    }, [rewardsData]);
+    // useEffect(() => {
+    //     if (rewardsData) {
+    //         console.log('rewards', rewardsData);
+    //     }
+    //     console.log('rev', rewardsData);
+    // }, [rewardsData]);
 
     return (
         <Card className="w-[1250px] border-[#d3500c]">
