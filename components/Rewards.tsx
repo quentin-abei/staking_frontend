@@ -19,6 +19,8 @@ import { useEffect, useMemo } from 'react';
 import { LoadingSpinner } from './loader';
 import { useToast } from './ui/use-toast';
 import Image from 'next/image';
+import { Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function Rewards() {
     const { address, isConnected } = useAccount();
@@ -92,7 +94,21 @@ export function Rewards() {
     // }, [rewardsData]);
 
     return (
-        <Card className="w-[1250px] border-[#d3500c]">
+        <Card className="w-[1250px] border-[#d3500c] relative">
+            <div className="absolute top-5 right-5 w-1/2">
+                <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Rewards Distribution</AlertTitle>
+                    <AlertDescription>
+                        Thank you for participating! Please note that rewards
+                        will be distributed after the staking period ends. It's
+                        important to keep your stake until the end to remain
+                        eligible for rewards. Unstaking your tokens prematurely
+                        will forfeit your eligibility for rewards. Only staked
+                        addresses will receive rewards. Happy staking!
+                    </AlertDescription>
+                </Alert>
+            </div>
             <CardHeader>
                 <CardTitle>Rewards</CardTitle>
                 <CardDescription>Claim your earned rewards</CardDescription>
@@ -115,7 +131,11 @@ export function Rewards() {
                         rewardsData !== undefined &&
                         !isNaN(Number(rewardsData)) &&
                         loadingRewards === false ? (
-                            rewardsData.toString()
+                            Number(rewardsData) !== 0 ? (
+                                rewardsData.toString()
+                            ) : (
+                                'NaN'
+                            )
                         ) : (
                             <LoadingSpinner className="text-[#EA580C] h-5" />
                         )
@@ -130,7 +150,8 @@ export function Rewards() {
                         disabled={
                             loadingClaimRewardReceipt ||
                             claimRewardsStatus === 'pending' ||
-                            Number(rewardsData) === 0
+                            Number(rewardsData) === 0 ||
+                            !isConnected
                         }
                     >
                         {loadingClaimRewardReceipt ||
